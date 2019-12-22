@@ -65,5 +65,5 @@ Fork自Moshow郑锴 https://github.com/moshowgame/SpringBootCodeGenerator 源码
 </tbody></table>
 
 <img src="./codegenerator.png">
-<img src="./donate.jpg">
+<img src="./donate.png">
 <table>
