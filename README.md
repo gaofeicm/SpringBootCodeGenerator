@@ -8,14 +8,21 @@ SpringBootCodeGenerator
 ----
 基于SpringBoot2+Freemarker的代码生成器，用DDL SQL语句生成JPA/JdbcTemplate/Mybatis/BeetlSQL相关代码，支持mysql/oracle/pgsql等三大数据库。以释放双手为目的，各大模板也在陆续补充和优化。欢迎大家Issue提交模板和交流想法，也欢迎提交PullRequest！
 <br><br>
-另外，感谢bejson三叔将他部署在 http://java.bejson.com/generator 上，目前是besjon专供工具(线上版本不一定是最新的，会有延迟，请谅解，谢谢)。
+Fork自Moshow郑锴 https://github.com/moshowgame/SpringBootCodeGenerator 源码进行修改，若存在侵权，请联系我。
 <br><br>
 <table><tbody>
-<tr><td>访问路径</td> <td>http://127.0.0.1:1234/generator</td></tr>
-<tr><td>在线地址</td> <td>http://java.bejson.com/generator</td></tr>
-<tr><td>CSDN博客</td> <td>http://blog.csdn.net/moshowgame</td></tr>
+<tr><td>访问路径</td> <td>http://127.0.0.1:9959</td></tr>
+<tr><td>在线地址</td> <td>http://code.gaofeicm.cn</td></tr>
 <tr><td></td> <td></td></tr>
 <tr><td>更新日期</td> <td>更新内容</td></tr>
+<tr><td>20191222<td>1.修复了jpa实体生成时注解错误的问题，更改了前端界面</td></tr>
+<tr><td>20191128<td>1.修复支持string-copy导致的以n结尾的字母不显示问题 2.jpa-entity新增swagger@ApiModel@ApiModelProperty注解和SQL字段@Column注解(感谢@yjq907的建议)</td></tr>
+<tr><td>20191126<td>1.springboot2内置tomcat更换为性能更强大的undertow 2.修复tinyintTransType参数丢失问题</td></tr>
+<tr><td>20191124<td>1.java代码结构优化. 2.新增简单的json生成模式 3.新增简单的正则表达式匹配模式(感谢@ydq的贡献) 4.新增对复制String代码中的乱SQL代码的支持 5.优化对JSON的父子节点/处理，JSONObject和JSONArray节点处理，子节点缺失'{'头处理 </td></tr>
+<tr><td>20191123<td>1.移除频繁出错和被过滤的layer,改为jquery-toast. 2.Util功能优化,新增json和xml.</td></tr>
+<tr><td>20191116<td>优化对primary关键字的处理(感谢@liujiansgit的反馈).</td></tr>
+<tr><td>20191115<td>1.添加tinyint类型转换(感谢@lixiliang&@liujiansgit的Suggestion) 2.添加一键复制功能(感谢@gaohanghang的Suggestion) 3.Mybatis的insert增加keyProperty="id"用于返回自增id(感谢@88888888888888888888的Suggestion) 4.优化date类型的支持(感谢@SteveLsf的反馈) 5.其他一些优化. </td></tr>
+<tr><td>20191015<td>修复jdbcTemplates中insert语句第一个字段丢失的问题. </td></tr>   
 <tr><td>20190915<td>1.添加对象getset模板 2.添加sql模板 3.启动类添加日志输出，方便项目使用（感谢@gaohanghang 的pull request） </td></tr>   
 <tr><td>20190910-2<td>优化以及更新Maven依赖，减少打包体积。 </td></tr>   
 <tr><td>20190910-1<td>1.修复mapper接口load方法，但是xml中方法不匹配问题 2.移除mapper中CRUD时的@param 注解，会影响xml的解析（感谢@caojiantao的反馈）。3.优化MyBatis的xml文件对Oracle的支持。（感谢@wylove1992的反馈） 4.新增对boolean的处理（感谢@violinxsc的反馈）以及优化tinyint类型生成boolean类型问题（感谢@hahaYhui的反馈） </td></tr>   
@@ -57,9 +64,6 @@ SpringBootCodeGenerator
 <tr><td>fieldComment</td> <td>字段备注</td></tr>
 </tbody></table>
 
-<img src="./codegenerator1.png">
-<img src="./codegenerator2.png">
-<img src="./codegenerator3.png">
-<img src="./codegenerator4.png">
+<img src="./codegenerator.png">
 <img src="./donate.jpg">
 <table>
