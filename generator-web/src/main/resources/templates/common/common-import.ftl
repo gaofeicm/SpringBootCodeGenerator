@@ -49,6 +49,7 @@
 <#macro commonFooter >
     <div class="container">
         <hr>
+        <div id="donate" class="container" show="no" style="margin:5px 0px;"></div>
         <footer>
             <footer class="bd-footer text-muted" role="contentinfo">
                 <div class="container" style="text-align: center;">

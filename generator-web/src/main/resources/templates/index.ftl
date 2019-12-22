@@ -85,7 +85,7 @@
          */
         function donate(){
             if($("#donate").attr("show")=="no"){
-                $("#donate").html('<img src="https://raw.githubusercontent.com/gaofeicm/SpringBootCodeGenerator/master/donate.png"></img>');
+                $("#donate").html('<img src="https://www.gaofeicm.cn/assets/images/donate.png"></img>');
                 $("#donate").attr("show","yes");
             }else{
                 $("#donate").html('<p>谢谢赞赏！</p>');
