@@ -85,7 +85,7 @@
          */
         function donate(){
             if($("#donate").attr("show")=="no"){
-                $("#donate").html('<img src="http://upyun.bejson.com/img/zhengkai.png"></img>');
+                $("#donate").html('<img src="https://raw.githubusercontent.com/gaofeicm/SpringBootCodeGenerator/master/donate.png"></img>');
                 $("#donate").attr("show","yes");
             }else{
                 $("#donate").html('<p>谢谢赞赏！</p>');
@@ -103,29 +103,6 @@
                 navigator.clipboard.writeText(genCodeArea.getValue());
                 $.toast("√ 复制成功");
             }
-        });
-
-        function getVersion(){
-            var gitVersion ;
-            $.ajax({
-                type: 'GET',
-                url: "https://raw.githubusercontent.com/moshowgame/SpringBootCodeGenerator/master/generator-web/src/main/resources/static/version.json",
-                dataType: "json",
-                success: function (data) {
-                    gitVersion = data.version;
-                    $.ajax({
-                        type: 'GET',
-                        url: base_url + "/static/version.json",
-                        dataType: "json",
-                        success: function (data) {
-                            $.toast("#当前版本:"+data.version+" | github:"+gitVersion);
-                        }
-                    });
-                }
-            });
-        }
-        $('#version').on('click', function(){
-            getVersion();
         });
         $('#ddlSqlArea').next().css("border-radius", "15px");
         $('#genCodeArea').next().css("border-radius", "12px");
