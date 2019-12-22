@@ -1,8 +1,12 @@
 package com.softdev.system.generator.util;
 
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.softdev.system.generator.entity.ClassInfo;
 import com.softdev.system.generator.entity.FieldInfo;
+import com.softdev.system.generator.entity.ParamInfo;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -13,23 +17,30 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @author xuxueli 2018-05-02 21:10:45
- * @modify zhengk/moshow 20180913
+ * @author zhengkai.blog.csdn.net
  */
 public class TableParseUtil {
 
     /**
      * 解析建表SQL生成代码（model-dao-xml）
      *
-     * @param tableSql
+     * @param paramInfo
      * @return
      */
-    public static ClassInfo processTableIntoClassInfo(String tableSql, boolean isUnderLineToCamelCase) throws IOException {
+    public static ClassInfo processTableIntoClassInfo(ParamInfo paramInfo)
+            throws IOException {
+        //process the param
+        String tableSql=paramInfo.getTableSql();
+        String nameCaseType=paramInfo.getNameCaseType();
+        String tinyintTransType=paramInfo.getTinyintTransType();
+
         if (tableSql==null || tableSql.trim().length()==0) {
             throw new CodeGenerateException("Table structure can not be empty.");
         }
+        //deal with special character
         tableSql = tableSql.trim().replaceAll("'","`").replaceAll("\"","`").replaceAll("，",",").toLowerCase();
-
+        //deal with java string copy \n"
+        tableSql = tableSql.trim().replaceAll("\\\\n`","").replaceAll("\\+","").replaceAll("``","`").replaceAll("\\\\","");
         // table Name
         String tableName = null;
         if (tableSql.contains("TABLE") && tableSql.contains("(")) {
@@ -41,7 +52,9 @@ public class TableParseUtil {
         }
 
         //新增处理create table if not exists members情况
-        if (tableName.contains("if not exists")) tableName=tableName.replaceAll("if not exists","");
+        if (tableName.contains("if not exists")) {
+            tableName=tableName.replaceAll("if not exists","");
+        }
 
         if (tableName.contains("`")) {
             tableName = tableName.substring(tableName.indexOf("`")+1, tableName.lastIndexOf("`"));
@@ -101,20 +114,22 @@ public class TableParseUtil {
         String fieldListTmp = tableSql.substring(tableSql.indexOf("(")+1, tableSql.lastIndexOf(")"));
 
         // 匹配 comment，替换备注里的小逗号, 防止不小心被当成切割符号切割
-        Matcher matcher = Pattern.compile("comment `(.*?)\\`").matcher(fieldListTmp);     // "\\{(.*?)\\}"
-        while(matcher.find()){
+        String commentPattenStr1="comment `(.*?)\\`";
+        Matcher matcher1 = Pattern.compile(commentPattenStr1).matcher(fieldListTmp);
+        while(matcher1.find()){
 
-            String commentTmp = matcher.group();
+            String commentTmp = matcher1.group();
             //2018-9-27 zhengk 不替换，只处理，支持COMMENT评论里面多种注释
             //commentTmp = commentTmp.replaceAll("\\ comment `|\\`", " ");      // "\\{|\\}"
 
             if (commentTmp.contains(",")) {
                 String commentTmpFinal = commentTmp.replaceAll(",", "，");
-                fieldListTmp = fieldListTmp.replace(matcher.group(), commentTmpFinal);
+                fieldListTmp = fieldListTmp.replace(matcher1.group(), commentTmpFinal);
             }
         }
         //2018-10-18 zhengkai 新增支持double(10, 2)等类型中有英文逗号的特殊情况
-        Matcher matcher2 = Pattern.compile("\\`(.*?)\\`").matcher(fieldListTmp);     // "\\{(.*?)\\}"
+        String commentPattenStr2="\\`(.*?)\\`";
+        Matcher matcher2 = Pattern.compile(commentPattenStr2).matcher(fieldListTmp);
         while(matcher2.find()){
             String commentTmp2 = matcher2.group();
             if (commentTmp2.contains(",")) {
@@ -123,7 +138,8 @@ public class TableParseUtil {
             }
         }
         //2018-10-18 zhengkai 新增支持double(10, 2)等类型中有英文逗号的特殊情况
-        Matcher matcher3 = Pattern.compile("\\((.*?)\\)").matcher(fieldListTmp);     // "\\{(.*?)\\}"
+        String commentPattenStr3="\\((.*?)\\)";
+        Matcher matcher3 = Pattern.compile(commentPattenStr3).matcher(fieldListTmp);
         while(matcher3.find()){
             String commentTmp3 = matcher3.group();
             if (commentTmp3.contains(",")) {
@@ -144,11 +160,10 @@ public class TableParseUtil {
                 // 2019-2-22 zhengkai 要在条件中使用复杂的表达式
                 // 2019-4-29 zhengkai 优化对普通和特殊storage关键字的判断（感谢@AhHeadFloating的反馈 ）
                 boolean specialFlag=(!columnLine.contains("key ")&&!columnLine.contains("constraint")&&!columnLine.contains("using")&&!columnLine.contains("unique")
-                        &&!(columnLine.contains("primary")&&columnLine.indexOf("storage")+3>columnLine.indexOf("("))
+                        &&!(columnLine.contains("primary ")&&columnLine.indexOf("storage")+3>columnLine.indexOf("("))
                         &&!columnLine.contains("pctincrease")
                         &&!columnLine.contains("buffer_pool")&&!columnLine.contains("tablespace")
-                        &&!(columnLine.contains("primary")&&i>3));
-
+                        &&!(columnLine.contains("primary ")&&i>3));
                 if (specialFlag){
                     //如果是oracle的number(x,x)，可能出现最后分割残留的,x)，这里做排除处理
                     if(columnLine.length()<5) {continue;}
@@ -157,17 +172,20 @@ public class TableParseUtil {
                     columnLine=columnLine.replaceAll("`"," ").replaceAll("\""," ").replaceAll("'","").replaceAll("  "," ").trim();
                     //如果遇到username varchar(65) default '' not null,这种情况，判断第一个空格是否比第一个引号前
                     columnName = columnLine.substring(0, columnLine.indexOf(" "));
-
                     // field Name
-//                    2019-09-08 yj 添加是否下划线转换为驼峰的判断
-                    String fieldName;
-                    if(isUnderLineToCamelCase){
+                    // 2019-09-08 yj 添加是否下划线转换为驼峰的判断
+                    String fieldName=null;
+                    if(ParamInfo.NAME_CASE_TYPE.CAMEL_CASE.equals(nameCaseType)){
                         fieldName = StringUtils.lowerCaseFirst(StringUtils.underlineToCamelCase(columnName));
                         if (fieldName.contains("_")) {
                             fieldName = fieldName.replaceAll("_", "");
                         }
-                    }else {
+                    }else if(ParamInfo.NAME_CASE_TYPE.UNDER_SCORE_CASE.equals(nameCaseType)){
                         fieldName = StringUtils.lowerCaseFirst(columnName);
+                    }else if(ParamInfo.NAME_CASE_TYPE.UPPER_UNDER_SCORE_CASE.equals(nameCaseType)){
+                        fieldName = StringUtils.lowerCaseFirst(columnName.toUpperCase());
+                    }else{
+                        fieldName=columnName;
                     }
 
                     // field class
@@ -184,7 +202,7 @@ public class TableParseUtil {
                         fieldClass = Float.class.getSimpleName();
                     } else if (columnLine.contains("double")) {
                         fieldClass = Double.class.getSimpleName();
-                    } else if (columnLine.contains("datetime") || columnLine.contains("timestamp")) {
+                    } else if (columnLine.contains("time") || columnLine.contains("date") || columnLine.contains("datetime") || columnLine.contains("timestamp")) {
                         fieldClass = Date.class.getSimpleName();
                     } else if (columnLine.contains("varchar") || columnLine.contains(" text")|| columnLine.contains("char")
                             || columnLine.contains("clob")||columnLine.contains("blob")||columnLine.contains("json")) {
@@ -221,9 +239,12 @@ public class TableParseUtil {
                         }else{
                             fieldClass = BigDecimal.class.getSimpleName();
                         }
-                    } else if (columnLine.contains("boolean")|| columnLine.contains("tinyint") ) {
+                    } else if (columnLine.contains("boolean")) {
                         //20190910 MOSHOW.K.ZHENG 新增对boolean的处理（感谢@violinxsc的反馈）以及修复tinyint类型字段无法生成boolean类型问题（感谢@hahaYhui的反馈）
                         fieldClass = Boolean.class.getSimpleName();
+                    } else if (columnLine.contains("tinyint") ) {
+                        //20191115 MOSHOW.K.ZHENG 支持对tinyint的特殊处理
+                        fieldClass=tinyintTransType;
                     } else {
                         fieldClass = String.class.getSimpleName();
                     }
@@ -283,5 +304,118 @@ public class TableParseUtil {
 
         return codeJavaInfo;
     }
+    /**
+     * parse JSON
+     * @param paramInfo
+     * @return
+     */
+    public static ClassInfo processJsonToClassInfo(ParamInfo paramInfo){
+        ClassInfo codeJavaInfo = new ClassInfo();
+        codeJavaInfo.setTableName("JsonDto");
+        codeJavaInfo.setClassName("JsonDto");
+        codeJavaInfo.setClassComment("JsonDto");
 
+        //support children json if forget to add '{' in front of json
+        if(paramInfo.getTableSql().trim().startsWith("\"")){
+            paramInfo.setTableSql("{"+paramInfo.getTableSql());
+        }
+        if(JSON.isValid(paramInfo.getTableSql())){
+            if(paramInfo.getTableSql().trim().startsWith("{")){
+                JSONObject jsonObject = JSONObject.parseObject(paramInfo.getTableSql().trim());
+                //parse FieldList by JSONObject
+                codeJavaInfo.setFieldList(processJsonObjectToFieldList(jsonObject));
+            }else if(paramInfo.getTableSql().trim().startsWith("[")){
+                JSONArray jsonArray=JSONArray.parseArray(paramInfo.getTableSql().trim());
+                //parse FieldList by JSONObject
+                codeJavaInfo.setFieldList(processJsonObjectToFieldList(jsonArray.getJSONObject(0)));
+            }
+        }
+
+        return codeJavaInfo;
+    }
+    /**
+     * parse SQL by regex
+     * @author https://github.com/ydq
+     * @param paramInfo
+     * @return
+     */
+    public static ClassInfo processTableToClassInfoByRegex(ParamInfo paramInfo){
+        // field List
+        List<FieldInfo> fieldList = new ArrayList<FieldInfo>();
+        //return classInfo
+        ClassInfo codeJavaInfo = new ClassInfo();
+
+        //匹配整个ddl，将ddl分为表名，列sql部分，表注释
+        String DDL_PATTEN_STR="\\s*create\\s+table\\s+(?<tableName>\\S+)[^\\(]*\\((?<columnsSQL>[\\s\\S]+)\\)[^\\)]+?(comment\\s*(=|on\\s+table)\\s*'(?<tableComment>.*?)'\\s*;?)?$";
+
+        Pattern DDL_PATTERN = Pattern.compile(DDL_PATTEN_STR, Pattern.CASE_INSENSITIVE);
+
+        //匹配列sql部分，分别解析每一列的列名 类型 和列注释
+        String COL_PATTERN_STR="\\s*(?<fieldName>\\S+)\\s+(?<fieldType>\\w+)\\s*(?:\\([\\s\\d,]+\\))?((?!comment).)*(comment\\s*'(?<fieldComment>.*?)')?\\s*(,|$)";
+
+        Pattern COL_PATTERN = Pattern.compile(COL_PATTERN_STR, Pattern.CASE_INSENSITIVE);
+
+        Matcher matcher = DDL_PATTERN.matcher(paramInfo.getTableSql().trim());
+        if (matcher.find()){
+            String tableName = matcher.group("tableName");
+            String tableComment = matcher.group("tableComment");
+            codeJavaInfo.setTableName(tableName.replaceAll("'",""));
+            codeJavaInfo.setClassName(tableName.replaceAll("'",""));
+            codeJavaInfo.setClassComment(tableComment.replaceAll("'",""));
+            String columnsSQL = matcher.group("columnsSQL");
+            if (columnsSQL != null && columnsSQL.length() > 0){
+                Matcher colMatcher = COL_PATTERN.matcher(columnsSQL);
+                while (colMatcher.find()){
+                    String fieldName = colMatcher.group("fieldName");
+                    String fieldType = colMatcher.group("fieldType");
+                    String fieldComment = colMatcher.group("fieldComment");
+                    if (!"key".equalsIgnoreCase(fieldType)){
+                        FieldInfo fieldInfo = new FieldInfo();
+                        fieldInfo.setFieldName(fieldName.replaceAll("'",""));
+                        fieldInfo.setColumnName(fieldName.replaceAll("'",""));
+                        fieldInfo.setFieldClass(fieldType.replaceAll("'",""));
+                        fieldInfo.setFieldComment(fieldComment.replaceAll("'",""));
+                        fieldList.add(fieldInfo);
+                    }
+                }
+            }
+            codeJavaInfo.setFieldList(fieldList);
+        }
+        return codeJavaInfo;
+    }
+    public static List<FieldInfo> processJsonObjectToFieldList(JSONObject jsonObject){
+        // field List
+        List<FieldInfo> fieldList = new ArrayList<FieldInfo>();
+        jsonObject.keySet().stream().forEach(jsonField->{
+            FieldInfo fieldInfo = new FieldInfo();
+            fieldInfo.setFieldName(jsonField);
+            fieldInfo.setColumnName(jsonField);
+            fieldInfo.setFieldClass(String.class.getSimpleName());
+            fieldInfo.setFieldComment("father:"+jsonField);
+            fieldList.add(fieldInfo);
+            if(jsonObject.get(jsonField) instanceof JSONArray){
+                jsonObject.getJSONArray(jsonField).stream().forEach(arrayObject->{
+                    FieldInfo fieldInfo2 = new FieldInfo();
+                    fieldInfo2.setFieldName(arrayObject.toString());
+                    fieldInfo2.setColumnName(arrayObject.toString());
+                    fieldInfo2.setFieldClass(String.class.getSimpleName());
+                    fieldInfo2.setFieldComment("children:"+arrayObject.toString());
+                    fieldList.add(fieldInfo2);
+                });
+            }else if(jsonObject.get(jsonField) instanceof JSONObject){
+                jsonObject.getJSONObject(jsonField).keySet().stream().forEach(arrayObject->{
+                    FieldInfo fieldInfo2 = new FieldInfo();
+                    fieldInfo2.setFieldName(arrayObject.toString());
+                    fieldInfo2.setColumnName(arrayObject.toString());
+                    fieldInfo2.setFieldClass(String.class.getSimpleName());
+                    fieldInfo2.setFieldComment("children:"+arrayObject.toString());
+                    fieldList.add(fieldInfo2);
+                });
+            }
+        });
+        if(fieldList.size()<1){
+            throw new CodeGenerateException("JSON解析失败");
+        }
+        return fieldList;
+    }
 }
