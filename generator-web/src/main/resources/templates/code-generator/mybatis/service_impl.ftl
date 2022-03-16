@@ -1,16 +1,16 @@
+<#if isAutoImport?exists && isAutoImport==true>
 import org.springframework.stereotype.Service;
-
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+</#if>
 /**
-* ${classInfo.classComment}
-* @author ${authorName}
-* @date ${.now?string('yyyy/MM/dd')}
-*/
+ * @description ${classInfo.classComment}
+ * @author ${authorName}
+ * @date ${.now?string('yyyy-MM-dd')}
+ */
 @Service
 public class ${classInfo.className}ServiceImpl implements ${classInfo.className}Service {
 
@@ -19,29 +19,29 @@ public class ${classInfo.className}ServiceImpl implements ${classInfo.className}
 
 
 	@Override
-	public ReturnT<String> insert(${classInfo.className} ${classInfo.className?uncap_first}) {
+	public Object insert(${classInfo.className} ${classInfo.className?uncap_first}) {
 
 		// valid
 		if (${classInfo.className?uncap_first} == null) {
-			return new ReturnT<String>(ReturnT.FAIL_CODE, "必要参数缺失");
+			return ${returnUtilFailure}("必要参数缺失");
         }
 
 		${classInfo.className?uncap_first}Mapper.insert(${classInfo.className?uncap_first});
-        return ReturnT.SUCCESS;
+        return ${returnUtilSuccess}();
 	}
 
 
 	@Override
-	public ReturnT<String> delete(int id) {
+	public Object delete(int id) {
 		int ret = ${classInfo.className?uncap_first}Mapper.delete(id);
-		return ret>0?ReturnT.SUCCESS:ReturnT.FAIL;
+		return ret>0?${returnUtilSuccess}():${returnUtilFailure}();
 	}
 
 
 	@Override
-	public ReturnT<String> update(${classInfo.className} ${classInfo.className?uncap_first}) {
+	public Object update(${classInfo.className} ${classInfo.className?uncap_first}) {
 		int ret = ${classInfo.className?uncap_first}Mapper.update(${classInfo.className?uncap_first});
-		return ret>0?ReturnT.SUCCESS:ReturnT.FAIL;
+		return ret>0?${returnUtilSuccess}():${returnUtilFailure}();
 	}
 
 

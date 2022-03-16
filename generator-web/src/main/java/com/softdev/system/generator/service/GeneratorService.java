@@ -8,10 +8,13 @@ import java.util.Map;
 
 /**
  * GeneratorService
+ *
  * @author zhengkai.blog.csdn.net
  */
 public interface GeneratorService {
 
-    public Map<String,String> getResultByParams(Map<String, Object> params) throws IOException, TemplateException;
+    String getTemplateConfig() throws IOException;
+
+    public Map<String, String> getResultByParams(Map<String, Object> params) throws IOException, TemplateException;
 
 }

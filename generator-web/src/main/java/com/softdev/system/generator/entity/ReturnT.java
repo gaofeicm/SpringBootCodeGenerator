@@ -3,31 +3,62 @@ package com.softdev.system.generator.entity;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * common return
- * @author xuxueli 2015-12-4 16:32:31
+ * common returnT:公共返回封装类
+ *
+ * @author zhengkai.blog.csdn.net
  */
 @Data
-public class ReturnT<T> implements Serializable {
-	public static final long serialVersionUID = 42L;
+public class ReturnT extends HashMap<String, Object> {
+    private static final long serialVersionUID = 1L;
 
-	public static final int SUCCESS_CODE = 200;
-	public static final int FAIL_CODE = 500;
-	public static final ReturnT<String> SUCCESS = new ReturnT<>(null);
-	public static final ReturnT<String> FAIL = new ReturnT<>(FAIL_CODE, null);
-	
-	private int code;
-	private String msg;
-	private T data;
-	
-	public ReturnT(int code, String msg) {
-		this.code = code;
-		this.msg = msg;
-	}
-	public ReturnT(T data) {
-		this.code = SUCCESS_CODE;
-		this.data = data;
-	}
-	
+    public ReturnT() {
+        put("code", 0);
+        put("msg", "success");
+    }
+
+    public static ReturnT error() {
+        return error(500, "未知异常，请联系管理员");
+    }
+
+    public static ReturnT error(String msg) {
+        return error(500, msg);
+    }
+
+    public static ReturnT error(int code, String msg) {
+        ReturnT r = new ReturnT();
+        r.put("code", code);
+        r.put("msg", msg);
+        return r;
+    }
+    public static ReturnT define(int code, String msg) {
+        ReturnT r = new ReturnT();
+        r.put("code", code);
+        r.put("msg", msg);
+        return r;
+    }
+    public static ReturnT ok(String msg) {
+        ReturnT r = new ReturnT();
+        r.put("msg", msg);
+        return r;
+    }
+
+    public static ReturnT ok(Map<String, Object> map) {
+        ReturnT r = new ReturnT();
+        r.putAll(map);
+        return r;
+    }
+
+    public static ReturnT ok() {
+        return new ReturnT();
+    }
+
+    @Override
+    public ReturnT put(String key, Object value) {
+        super.put(key, value);
+        return this;
+    }
 }

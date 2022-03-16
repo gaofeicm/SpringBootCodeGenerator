@@ -25,7 +25,7 @@ public class StringUtils {
      */
     public static String lowerCaseFirst(String str) {
         //2019-2-10 解决StringUtils.lowerCaseFirst潜在的NPE异常@liutf
-        return (str!=null&&str.length()>1)?str.substring(0, 1).toLowerCase() + str.substring(1):"";
+        return (str != null && str.length() > 1) ? str.substring(0, 1).toLowerCase() + str.substring(1) : "";
     }
 
     /**
@@ -54,8 +54,11 @@ public class StringUtils {
         }
         return result.toString();
     }
-
+    public static boolean isNotNull(String str){
+        return org.apache.commons.lang3.StringUtils.isNotEmpty(str);
+    }
     public static void main(String[] args) {
 
     }
+
 }
